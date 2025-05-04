@@ -1,7 +1,10 @@
 import streamlit as st
 import subprocess
 import json
+import pandas as pd
+import os
 from datetime import datetime
+import pandas as pd
 
 # Import des modules de scan
 from app.lynis_scanner import run_lynis_scan
@@ -77,10 +80,10 @@ with tab1:
                 st.markdown("#### Protection d'Intégrité Système")
                 sip_result = run_sip_analyzer()
                 if "error" in sip_result:
-                    st.error(f"Erreur lors de la vérification du SIP: {sip_result['error']}")
+                    st.error(f"Error checking SIP: {sip_result['error']}")
                 else:
                     if sip_result.get("secure", False):
-                        st.markdown("<p>Statut: <span class='secure'>ACTIVÉ ✓</span></p>", unsafe_allow_html=True)
+                        st.markdown("<p>Status: <span class='secure'>ENABLED ✓</span></p>", unsafe_allow_html=True)
                     else:
                         st.markdown("<p>Statut: <span class='critical'>DÉSACTIVÉ ⚠️</span></p>", unsafe_allow_html=True)
                         # Ligne corrigée ci-dessous
@@ -91,7 +94,7 @@ with tab1:
                 st.markdown("#### Pare-feu")
                 firewall_result = run_firewall_checker()
                 if "error" in firewall_result:
-                    st.error(f"Erreur lors de la vérification du pare-feu: {firewall_result['error']}")
+                    st.error(f"Error checking firewall: {firewall_result['error']}")
                 else:
                     if firewall_result.get("secure", False):
                         st.markdown("<p>Statut: <span class='secure'>ACTIVÉ ✓</span></p>", unsafe_allow_html=True)
@@ -99,9 +102,9 @@ with tab1:
                         st.markdown("<p>Statut: <span class='critical'>DÉSACTIVÉ ⚠️</span></p>", unsafe_allow_html=True)
                         if "recommendations" in firewall_result:
                             for rec in firewall_result["recommendations"]:
-                                st.markdown(f"- {rec}")
-            
-            st.markdown("---")
+                                st.markdown(f"**Recommendation:** {rec}")
+                        st.markdown("</div>", unsafe_allow_html=True)
+                st.markdown("</div>", unsafe_allow_html=True)
             
             # Vérification des mises à jour
             st.markdown("#### Mises à jour logicielles")
@@ -110,7 +113,7 @@ with tab1:
                 st.error(f"Erreur lors de la vérification des mises à jour: {update_result['error']}")
             else:
                 if update_result.get("secure", False):
-                    st.markdown("<p>Statut: <span class='secure'>À JOUR ✓</span></p>", unsafe_allow_html=True)
+                    st.markdown("<p>Status: <span class='secure'>UP TO DATE ✓</span></p>", unsafe_allow_html=True)
                 else:
                     update_count = update_result.get("total_updates", 0)
                     security_count = update_result.get("security_update_count", 0)
@@ -136,7 +139,7 @@ with tab2:
                 st.markdown("#### Résultats de l'analyse Lynis")
                 st.text_area("Sortie", output, height=300)
                 
-            elif tool_option == "Scan Malwarebytes":
+            elif tool_option == "Malwarebytes Scan":
                 output = run_malwarebytes_scan()
                 st.markdown("#### Malwarebytes")
                 st.info(output)

@@ -3,7 +3,7 @@ import subprocess
 def run_lynis_scan():
     try:
         # Run the Lynis scan command
-        result = subprocess.run([ 'lynis', 'audit', 'system'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        result = subprocess.run(['sudo', 'lynis', 'audit', 'system'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         output = result.stdout + "\n" + result.stderr
         return output
     except Exception as e:
