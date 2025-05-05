@@ -9,31 +9,46 @@ import pandas as pd
 # Import des modules de scan
 from app.lynis_scanner import run_lynis_scan
 
-
-# Configuration de la page
+# Set page configuration
 st.set_page_config(
-    page_title="MacSecure",
-    page_icon="🛡️"
+    page_title="MacSecure Dashboard",
+    page_icon="🛡️",
+    layout="wide"
 )
 
-# CSS simplifié
+# Simple CSS to improve appearance slightly
 st.markdown("""
 <style>
-    .header { color: #0066cc; text-align: center; }
-    .secure { color: #34c759; font-weight: bold; }
-    .warning { color: #ff9500; font-weight: bold; }
-    .critical { color: #ff3b30; font-weight: bold; }
+    .header {
+        color: #0066cc;
+        text-align: center;
+    }
+    .tool-header {
+        color: #34c759;
+    }
+    .secure {
+        color: #34c759;
+        font-weight: bold;
+    }
+    .warning {
+        color: #ff9500;
+        font-weight: bold;
+    }
+    .critical {
+        color: #ff3b30;
+        font-weight: bold;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# Titre
-st.markdown("<h1 class='header'>🛡️ MacSecure</h1>", unsafe_allow_html=True)
-st.markdown("### Analyse de sécurité simple pour macOS")
+# Title and intro
+st.markdown("<h1 class='header'>🛡️ MacSecure Dashboard</h1>", unsafe_allow_html=True)
+st.markdown("### Simple security analysis and recommendations for macOS")
 
-# Fonctions pour exécuter les scripts
+# Functions to run your custom scripts
 def run_sip_analyzer():
     try:
-        result = subprocess.run(['python', 'app/sip_analyzer.py'], 
+        result = subprocess.run(['python3', 'sip_analyzer.py'], 
                               capture_output=True, text=True, check=True)
         return json.loads(result.stdout)
     except Exception as e:
@@ -41,7 +56,15 @@ def run_sip_analyzer():
 
 def run_firewall_checker():
     try:
-        result = subprocess.run(['python', 'app/firewall_checker.py'], 
+        result = subprocess.run(['python3', 'firewall_check.py'], 
+                              capture_output=True, text=True, check=True)
+        return json.loads(result.stdout)
+    except Exception as e:
+        return {"error": str(e), "secure": False}
+
+def run_permission_analyzer():
+    try:
+        result = subprocess.run(['python3', 'permission_analyzer.py'], 
                               capture_output=True, text=True, check=True)
         return json.loads(result.stdout)
     except Exception as e:
@@ -49,7 +72,7 @@ def run_firewall_checker():
 
 def run_update_checker():
     try:
-        result = subprocess.run(['python', 'app/update_checker.py'], 
+        result = subprocess.run(['python3', 'update_checker.py'], 
                               capture_output=True, text=True, check=True)
         return json.loads(result.stdout)
     except Exception as e:
@@ -57,27 +80,29 @@ def run_update_checker():
 
 def run_malwarebytes_scan():
     try:
-        apple_script = 'tell application "Malwarebytes" to activate'
+        apple_script = '''
+        tell application "Malwarebytes" to activate
+        '''
         subprocess.run(["osascript", "-e", apple_script])
-        return "Malwarebytes est en cours d'exécution. Veuillez vérifier l'application pour les résultats."
+        return "Malwarebytes is now running. Please check the application for results."
     except Exception as e:
-        return f"Erreur: {e}"
+        return f"Error: {e}"
 
-# Création des onglets
-tab1, tab2 = st.tabs(["Analyse Rapide", "Outils Avancés"])
+# Create tabs for different scanning options
+tab1, tab2, tab3, tab4 = st.tabs(["Quick Scan", "System Security", "External Tools", "Reports"])
 
 with tab1:
-    st.markdown("### Analyse Rapide de Sécurité")
-    st.write("Exécutez une analyse rapide pour vérifier les paramètres de sécurité essentiels de votre Mac.")
+    st.markdown("### Quick Security Scan")
+    st.write("Run a quick scan to check the most important security settings on your Mac.")
     
-    if st.button("Lancer l'Analyse Rapide"):
-        with st.spinner("Analyse de votre système en cours..."):
-            # Création de colonnes pour les résultats
+    if st.button("Run Quick Scan"):
+        with st.spinner("Scanning your system..."):
+            # Create columns for results
             col1, col2 = st.columns(2)
             
-            # Vérification SIP
+            # SIP Check
             with col1:
-                st.markdown("#### Protection d'Intégrité Système")
+                st.markdown("#### System Integrity Protection")
                 sip_result = run_sip_analyzer()
                 if "error" in sip_result:
                     st.error(f"Error checking SIP: {sip_result['error']}")
@@ -85,105 +110,268 @@ with tab1:
                     if sip_result.get("secure", False):
                         st.markdown("<p>Status: <span class='secure'>ENABLED ✓</span></p>", unsafe_allow_html=True)
                     else:
-                        st.markdown("<p>Statut: <span class='critical'>DÉSACTIVÉ ⚠️</span></p>", unsafe_allow_html=True)
-                        # Ligne corrigée ci-dessous
-                        st.markdown(f"Recommandation: {sip_result.get('recommendation', 'Activer la Protection d Intégrité Système')}")
+                        st.markdown("<p>Status: <span class='critical'>DISABLED ⚠️</span></p>", unsafe_allow_html=True)
+                        st.markdown(f"Recommendation: {sip_result.get('recommendation', 'Enable System Integrity Protection')}")
             
-            # Vérification Firewall
+            # Firewall Check
             with col2:
-                st.markdown("#### Pare-feu")
+                st.markdown("#### Firewall")
                 firewall_result = run_firewall_checker()
                 if "error" in firewall_result:
                     st.error(f"Error checking firewall: {firewall_result['error']}")
                 else:
                     if firewall_result.get("secure", False):
-                        st.markdown("<p>Statut: <span class='secure'>ACTIVÉ ✓</span></p>", unsafe_allow_html=True)
+                        st.markdown("<p>Status: <span class='secure'>ENABLED ✓</span></p>", unsafe_allow_html=True)
                     else:
-                        st.markdown("<p>Statut: <span class='critical'>DÉSACTIVÉ ⚠️</span></p>", unsafe_allow_html=True)
+                        st.markdown("<p>Status: <span class='critical'>DISABLED ⚠️</span></p>", unsafe_allow_html=True)
                         if "recommendations" in firewall_result:
                             for rec in firewall_result["recommendations"]:
                                 st.markdown(f"**Recommendation:** {rec}")
                         st.markdown("</div>", unsafe_allow_html=True)
                 st.markdown("</div>", unsafe_allow_html=True)
             
-            # Vérification des mises à jour
-            st.markdown("#### Mises à jour logicielles")
+            # Updates Check
+            st.markdown("#### Software Updates")
             update_result = run_update_checker()
             if "error" in update_result:
-                st.error(f"Erreur lors de la vérification des mises à jour: {update_result['error']}")
+                st.error(f"Error checking updates: {update_result['error']}")
             else:
                 if update_result.get("secure", False):
                     st.markdown("<p>Status: <span class='secure'>UP TO DATE ✓</span></p>", unsafe_allow_html=True)
                 else:
                     update_count = update_result.get("total_updates", 0)
                     security_count = update_result.get("security_update_count", 0)
-                    st.markdown(f"<p>Statut: <span class='warning'>{update_count} MISES À JOUR DISPONIBLES</span> ({security_count} mises à jour de sécurité)</p>", unsafe_allow_html=True)
-                    st.markdown(f"Recommandation: {update_result.get('recommendation', 'Installer les mises à jour de sécurité en attente')}")
+                    st.markdown(f"<p>Status: <span class='warning'>{update_count} UPDATES AVAILABLE</span> ({security_count} security updates)</p>", unsafe_allow_html=True)
+                    st.markdown(f"Recommendation: {update_result.get('recommendation', 'Install pending security updates')}")
+            
+            st.markdown("---")
+            
+            # Permission Check
+            st.markdown("#### Critical File Permissions")
+            permission_result = run_permission_analyzer()
+            if "error" in permission_result:
+                st.error(f"Error checking permissions: {permission_result['error']}")
+            else:
+                if "results" in permission_result:
+                    # Find insecure permissions
+                    insecure_count = 0
+                    for item in permission_result["results"]:
+                        if not item.get("secure", True):
+                            insecure_count += 1
+                    
+                    if insecure_count == 0:
+                        st.markdown("<p>Status: <span class='secure'>SECURE ✓</span></p>", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"<p>Status: <span class='warning'>{insecure_count} INSECURE FILES FOUND</span></p>", unsafe_allow_html=True)
+                        
+                        # Display insecure files in a table
+                        insecure_files = [
+                            {"Path": item["path"], "Owner": item.get("owner", "Unknown"), 
+                             "Permissions": item.get("permissions", "Unknown"), 
+                             "Recommendation": item.get("recommendation", "Fix permissions")}
+                            for item in permission_result["results"] if not item.get("secure", True)
+                        ]
+                        
+                        if insecure_files:
+                            st.dataframe(pd.DataFrame(insecure_files))
 
 with tab2:
-    st.markdown("### Outils de Sécurité Avancés")
+    st.markdown("### System Security Tools")
+    st.write("Use these custom tools to analyze specific aspects of your Mac's security.")
     
     tool_option = st.selectbox(
-        "Choisissez un outil de sécurité à exécuter:",
+        "Choose a security tool to run:",
         [
-            "Sélectionnez un outil",
-            "Analyse Lynis",
-            "Scan Malwarebytes"
+            "Select a tool",
+            "System Integrity Protection (SIP) Analyzer",
+            "Firewall Configuration Checker",
+            "Permission Analyzer",
+            "Software Update Checker"
         ]
     )
     
-    if tool_option != "Sélectionnez un outil" and st.button(f"Exécuter {tool_option}"):
-        with st.spinner(f"Exécution de {tool_option}. Cela peut prendre plusieurs minutes..."):
-            if tool_option == "Analyse Lynis":
-                output = run_lynis_scan()
-                st.markdown("#### Résultats de l'analyse Lynis")
-                st.text_area("Sortie", output, height=300)
+    if tool_option != "Select a tool" and st.button(f"Run {tool_option}"):
+        with st.spinner(f"Running {tool_option}..."):
+            if tool_option == "System Integrity Protection (SIP) Analyzer":
+                result = run_sip_analyzer()
+                st.json(result)
                 
+
+
+                # Show recommendation if needed
+                if not result.get("secure", True) and "recommendation" in result:
+                    st.markdown(f"**Recommendation:** {result['recommendation']}")
+                    
+            elif tool_option == "Firewall Configuration Checker":
+                result = run_firewall_checker()
+                st.json(result)
+                
+                # Show recommendations if needed
+                if "recommendations" in result and result["recommendations"]:
+                    st.markdown("**Recommendations:**")
+                    for rec in result["recommendations"]:
+                        st.markdown(f"- {rec}")
+                    
+            elif tool_option == "Permission Analyzer":
+                result = run_permission_analyzer()
+                st.json(result)
+                
+                # Create a table view of the results if available
+                if "results" in result:
+                    data = []
+                    for item in result["results"]:
+                        data.append({
+                            "Path": item.get("path", ""),
+                            "Owner": item.get("owner", ""),
+                            "Permissions": item.get("permissions", ""),
+                            "Secure": "✓" if item.get("secure", False) else "✗",
+                            "Recommendation": item.get("recommendation", "")
+                        })
+                        
+                    st.dataframe(pd.DataFrame(data))
+                    
+            elif tool_option == "Software Update Checker":
+                result = run_update_checker()
+                st.json(result)
+                
+                # Display updates if available
+                if "update_list" in result and result["update_list"]:
+                    st.markdown("**Available Updates:**")
+                    for update in result["update_list"]:
+                        st.markdown(f"- {update}")
+
+with tab3:
+    st.markdown("### External Security Tools")
+    st.write("Run industry-standard security tools to perform more comprehensive security analysis.")
+    
+    tool_option = st.selectbox(
+        "Choose an external tool to run:",
+        [
+            "Select a tool",
+            "Lynis Security Scan",
+            "Chkrootkit Scan", 
+            "Malwarebytes Scan"
+        ]
+    )
+    
+    if tool_option != "Select a tool" and st.button(f"Run {tool_option}"):
+        with st.spinner(f"Running {tool_option}. This may take several minutes..."):
+            if tool_option == "Lynis Security Scan":
+                output = run_lynis_scan()
+                st.markdown("#### Lynis Scan Results")
+                st.text_area("Output", output, height=400)
+                
+            elif tool_option == "Chkrootkit Scan":
+                output = run_chkrootkit_scan()
+                st.markdown("#### Chkrootkit Scan Results")
+                st.text_area("Output", output, height=400)
+                
+>>>>>>> parent of fdfca1d (everything is fixeddddddd ,meryumii)
             elif tool_option == "Malwarebytes Scan":
                 output = run_malwarebytes_scan()
                 st.markdown("#### Malwarebytes")
                 st.info(output)
 
-# Bouton pour générer un rapport
-# Bouton pour générer un rapport
-if st.button("Générer un rapport de sécurité"):
-    with st.spinner("Génération du rapport de sécurité..."):
-        # Exécution des analyses de sécurité
-        sip_result = run_sip_analyzer()
-        firewall_result = run_firewall_checker()
-        update_result = run_update_checker()
-        lynis_result = run_lynis_scan()
-        malwarebytes_result = run_malwarebytes_scan()
-        
-        # Construction du rapport texte
-        report_content = f"""Rapport de Sécurité MacSecure
-Généré le: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+with tab4:
+    st.markdown("### Security Reports")
+    st.write("View and save security reports from your scans.")
+    
+    # Button to generate a comprehensive report
+    if st.button("Generate Comprehensive Security Report"):
+        with st.spinner("Generating comprehensive security report..."):
+            # Run all security checks
+            sip_result = run_sip_analyzer()
+            firewall_result = run_firewall_checker()
+            permission_result = run_permission_analyzer()
+            update_result = run_update_checker()
+            
+            # Display report
+            st.markdown("## MacSecure Comprehensive Security Report")
+            st.markdown(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            
+            # System security status
+            st.markdown("### System Security Status")
+            
+            # Count secure and insecure items
+            checks = [
+                {"name": "System Integrity Protection", "secure": sip_result.get("secure", False)},
+                {"name": "Firewall Configuration", "secure": firewall_result.get("secure", False)},
+                {"name": "Software Updates", "secure": update_result.get("secure", False)}
+            ]
+            
+            # Add permission results
+            if "results" in permission_result:
+                for item in permission_result["results"]:
+                    checks.append({
+                        "name": f"File Permissions: {item.get('path', 'Unknown path')}",
+                        "secure": item.get("secure", False)
+                    })
+            
+            # Calculate security score
+            secure_count = sum(1 for check in checks if check["secure"])
+            total_count = len(checks)
+            security_score = (secure_count / total_count) * 100 if total_count > 0 else 0
+            
+            # Display security score
+            st.markdown(f"#### Overall Security Score: {security_score:.1f}%")
+            
+            # Create a dataframe for check results
+            check_data = [
+                {"Check": check["name"], 
+                 "Status": "✅ Secure" if check["secure"] else "❌ Insecure"}
+                for check in checks
+            ]
+            
+            st.dataframe(pd.DataFrame(check_data))
+            
+            # Security recommendations
+            st.markdown("### Security Recommendations")
+            
+            recommendations = []
+            
+            # Add SIP recommendation if needed
+            if "recommendation" in sip_result and not sip_result.get("secure", True):
+                recommendations.append(sip_result["recommendation"])
+                
+            # Add firewall recommendations if needed
+            if "recommendations" in firewall_result:
+                recommendations.extend(firewall_result["recommendations"])
+                
+            # Add update recommendation if needed
+            if "recommendation" in update_result and not update_result.get("secure", True):
+                recommendations.append(update_result["recommendation"])
+                
+            # Add permission recommendations if needed
+            if "results" in permission_result:
+                for item in permission_result["results"]:
+                    if "recommendation" in item and not item.get("secure", True):
+                        recommendations.append(item["recommendation"])
+            
+            if recommendations:
+                for i, rec in enumerate(recommendations, 1):
+                    st.markdown(f"{i}. {rec}")
+            else:
+                st.markdown("No security recommendations at this time. Your system appears secure!")
+            
+            # Option to save report
+            st.markdown("### Save Report")
+            st.download_button(
+                label="Download Report as TXT",
+                data=f"""MacSecure Comprehensive Security Report
+Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
-ÉTAT DE LA SÉCURITÉ:
-- Protection d'Intégrité Système: {"ACTIVÉ" if sip_result.get("secure", False) else "DÉSACTIVÉ"}
-- Configuration du pare-feu: {"ACTIVÉ" if firewall_result.get("secure", False) else "DÉSACTIVÉ"}
-- Mises à jour logicielles: {"À JOUR" if update_result.get("secure", False) else f"{update_result.get('total_updates', 0)} MISES À JOUR DISPONIBLES"}
+SECURITY SCORE: {security_score:.1f}%
 
-ANALYSE AVANCÉE:
-- Résultats de Lynis:
-{lynis_result if lynis_result else "Aucun résultat disponible"}
+SECURITY CHECKS:
+{chr(10).join(f"- {check['Check']}: {check['Status']}" for check in check_data)}
 
-- Malwarebytes:
-{malwarebytes_result if malwarebytes_result else "Aucun résultat disponible"}
-"""
-        
-        # Affichage du rapport
-        st.markdown("## Rapport de Sécurité MacSecure")
-        st.markdown(f"Généré le: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        
-        # Téléchargement du rapport
-        st.download_button(
-            label="Télécharger le rapport (TXT)",
-            data=report_content,
-            file_name=f"macsecure_rapport_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
-            mime="text/plain"
-        )
+RECOMMENDATIONS:
+{chr(10).join(f"{i+1}. {rec}" for i, rec in enumerate(recommendations) if recommendations)}
+""",
+                file_name=f"macsecure_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+                mime="text/plain"
+            )
 
-# Pied de page
+# Footer
 st.markdown("---")
-st.markdown("MacSecure - Protection pour votre Mac")
+st.markdown("MacSecure Dashboard - Made with ❤️ for Mac security")
