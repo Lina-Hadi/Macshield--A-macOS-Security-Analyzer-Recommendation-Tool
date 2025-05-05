@@ -36,5 +36,4 @@ def check_sip_status():
 
 if __name__ == "__main__":
     result = check_sip_status()
-    # Ajout de cette ligne pour afficher le résultat
-    print(json.dumps(result, indent=4))
+    
